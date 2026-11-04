@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111111">
+<title>Designer Deal Radar</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#111;color:#f4f1eb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:22px}
+header{border-bottom:1px solid #444;padding-bottom:20px}
+h1{font-size:30px;letter-spacing:-1.5px;margin:0}
+.sub{color:#aaa;font-size:12px;letter-spacing:2px;margin-top:8px}
+main{max-width:850px;margin:30px auto}
+.panel{background:#1b1b1b;border:1px solid #333;border-radius:14px;padding:18px;margin-bottom:18px}
+h2{font-size:17px;margin-top:0}
+input,select,textarea{width:100%;padding:13px;background:#111;color:white;border:1px solid #444;border-radius:8px;margin:6px 0 13px;font-size:15px}
+button{background:#e9e3d8;color:#111;border:0;border-radius:8px;padding:13px 18px;font-weight:700;width:100%;font-size:14px}
+label{font-size:12px;color:#bbb}
+.deal{border-top:1px solid #444;padding:16px 0}
+.price{font-size:23px;font-weight:700}
+.tag{font-size:11px;color:#c9b99a;letter-spacing:1px}
+a{color:#d9c8a8}
+small{color:#aaa}
+</style>
+</head>
+<body>
+<header>
+<div class="sub">PRIVATE FASHION INTELLIGENCE</div>
+<h1>DESIGNER DEAL RADAR.</h1>
+<div class="sub">RARE FINDS. REAL VALUE. NO ORDINARY DISCOUNTS.</div>
+</header>
+<main>
+<section class="panel">
+<h2>Neuen Fund hinzufügen</h2>
+<label>Marke</label>
+<input id="brand" placeholder="z. B. Rick Owens">
+<label>Artikel</label>
+<input id="item" placeholder="z. B. Lederjacke">
+<label>Kaufpreis in €</label>
+<input id="price" type="number" placeholder="0">
+<label>Geschätzter Wiederverkaufswert nach Nutzung (€)</label>
+<input id="resale" type="number" placeholder="0">
+<label>Zustand</label>
+<select id="condition">
+<option>Neu mit Etikett</option>
+<option>Neu ohne Etikett</option>
+<option>Sehr gut</option>
+<option>Gut</option>
+<option>Akzeptabel</option>
+</select>
+<label>Link zum Angebot</label>
+<input id="url" placeholder="https://...">
+<label>Notizen</label>
+<textarea id="notes" placeholder="Größe, Material, Besonderheiten, Versand..."></textarea>
+<button onclick="addDeal()">FUND SPEICHERN</button>
+</section>
+<section class="panel">
+<h2>Dein Deal-Radar</h2>
+<div id="deals"><small>Noch keine Funde gespeichert.</small></div>
+</section>
+</main>
+<script>
+let deals=JSON.parse(localStorage.getItem("radarDeals")||"[]");
+function score(d){
+let cost=d.price-d.resale;
+let ratio=d.resale>0?d.price/d.resale:99;
+if(cost<=0)return "MEGA DEAL";
+if(ratio<=1.15)return "SEHR GUTER DEAL";
+if(ratio<=1.5)return "INTERESSANT";
+return "KEIN DEAL";
+}
+function render(){
+let box=document.getElementById("deals");
+if(!deals.length){box.innerHTML="<small>Noch keine Funde gespeichert.</small>";return;}
+box.innerHTML=deals.map((d,i)=>`
+<div class="deal">
+<div class="tag">${score(d)}</div>
+<h2>${safe(d.brand)} — ${safe(d.item)}</h2>
+<div class="price">${d.price.toFixed(2)} €</div>
+<small>Zustand: ${safe(d.condition)}<br>
+Geschätzter Wiederverkauf: ${d.resale.toFixed(2)} €<br>
+Effektive Kosten: ${(d.price-d.resale).toFixed(2)} €</small>
+<p>${safe(d.notes)}</p>
+${d.url?`<a href="${safe(d.url)}" target="_blank" rel="noopener">ANGEBOT ÖFFNEN ↗</a>`:""}
+<p><button onclick="removeDeal(${i})">LÖSCHEN</button></p>
+</div>`).join("");
+}
+function safe(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function addDeal(){
+let d={
+brand:document.getElementById("brand").value.trim(),
+item:document.getElementById("item").value.trim(),
+price:Number(document.getElementById("price").value),
+resale:Number(document.getElementById("resale").value),
+condition:document.getElementById("condition").value,
+url:document.getElementById("url").value.trim(),
+notes:document.getElementById("notes").value.trim()
+};
+if(!d.brand||!d.item||!d.price){alert("Bitte mindestens Marke, Artikel und Kaufpreis eintragen.");return;}
+deals.unshift(d);
+localStorage.setItem("radarDeals",JSON.stringify(deals));
+document.querySelectorAll("input,textarea").forEach(x=>x.value="");
+render();
+}
+function removeDeal(i){deals.splice(i,1);localStorage.setItem("radarDeals",JSON.stringify(deals));render();}
+render();
+</script>
+</body>
+</html>
